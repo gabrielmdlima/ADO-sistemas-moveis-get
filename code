@@ -1,0 +1,167 @@
+import * as React from 'react';
+import { Text, View, StyleSheet, FlatList, Pressable, Image,Modal } from 'react-native';
+import Constants from 'expo-constants';
+
+async function executeGet(url,jsonState){
+    //get síncrono com o uso do fetch
+    await fetch(url)
+    .then(response => {
+          if (response.status === 200) {
+            //console.log('sucesso');
+            response.json().then(function(result){ 
+
+              //console.log(result);
+              jsonState(result)
+
+              });
+          } else {
+            throw new Error('Erro ao consumir a API!');
+          }
+      })
+      .then(response => {
+        //console.debug(response);
+      }).catch(error => {
+        console.error(error);
+      });
+  }
+
+
+
+const ShowDetalhes = ({display,toogleModal,mensagem}) => (   
+    <Modal
+          animationType="slide"
+          transparent={true}
+          visible={display}
+          onRequestClose={toogleModal}
+    >
+
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+                <Pressable onPress={toogleModal}>
+                  <Text>{mensagem}</Text>
+                </Pressable>
+          </View>
+        </View>
+    
+    </Modal>
+        
+ )
+
+const Pessoa = ({titulo,preco,imagem}) => {
+    
+    //state para controle do Modal
+    const [modal,setModal] = React.useState(false)
+
+    function mudaModal(){
+      setModal(!modal)
+    }
+
+    return(
+    <View>
+      <Text style={styles.paragraph}>{titulo}</Text>
+    
+      <Pressable onPress={mudaModal}>
+
+        <Image
+          style={styles.tinyLogo}
+          source={{
+            uri: imagem,
+          }}
+        />
+      </Pressable>
+
+      <ShowDetalhes display={modal} toogleModal={mudaModal} mensagem={preco}/>
+
+    </View>
+    )
+}
+
+
+
+//item com uma arrow function
+/*const meuItemObj = ({item}) => (
+  <View>
+      <Text style={styles.paragraph}>{item.title}</Text>
+    </View>
+)*/
+
+
+
+export default function App() {
+
+  const [jsonData,setJsonData] = React.useState({})
+
+  executeGet("https://fakestoreapi.com/products?limit=20",setJsonData)
+
+  //função que renderiza cada item do FlatList
+  function meuItem({item}){
+    let title = item.title
+    let price = "$" + item.price
+    
+    return(
+      <Pessoa titulo={title} 
+              imagem={item.image}
+              preco={price}
+      />
+    )
+  }
+  
+
+  return (
+
+    <View style={styles.container}>
+
+      <FlatList
+        data={jsonData}
+        renderItem={meuItem}
+        keyExtractor={item => item.id}
+      />
+      
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingTop: Constants.statusBarHeight,
+    backgroundColor: '#6d9c7a',
+    padding: 8,
+  },
+  paragraph: {
+    margin: 10,
+    padding: 15,
+    fontSize: 18,
+    borderRadius: 20,
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    backgroundColor: '#35543e'
+  },
+  tinyLogo: {
+    width: 175,
+    height: 175,
+    alignSelf: 'center'
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "lightgray",
+    borderRadius: 20,
+    padding: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
